@@ -3,13 +3,14 @@ const router = express.Router()
 const userController = require('../controllers/userController')
 const verifyJWT = require('../middlewares/verifyJWT')
 
-// router.use(verifyJWT) // This applies security to all routes in this router
+// This applies security to all routes in this router
+//router.use(verifyJWT)
 
 router
   .route('/')
-  .get(userController.getAllUsers)
+  .get(verifyJWT, userController.getAllUsers)
   .post(userController.createNewUser)
-  .patch(userController.updateUser)
-  .delete(userController.deleteUser)
+  .patch(verifyJWT, userController.updateUser)
+  .delete(verifyJWT, userController.deleteUser)
 
 module.exports = router
