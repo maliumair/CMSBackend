@@ -38,7 +38,7 @@ const login = asyncHandler(async (req, res) => {
   )
 
   const refreshToken = jwt.sign(
-    { username: foundUser.username },
+    { email: foundUser.email },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: '3m' }
   )
@@ -58,7 +58,6 @@ const login = asyncHandler(async (req, res) => {
 // @access Public
 const refresh = asyncHandler(async (req, res) => {
   const cookies = req.cookies
-  console.log(cookies)
   if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' })
 
   const refreshToken = cookies.jwt
@@ -67,6 +66,7 @@ const refresh = asyncHandler(async (req, res) => {
     refreshToken,
     process.env.REFRESH_TOKEN_SECRET,
     asyncHandler(async (err, decoded) => {
+      console.log(decoded)
       if (err) return res.status(403).json({ message: 'Forbidden' })
 
       const foundUser = await user.findOne({ where: { email: decoded.email } })
