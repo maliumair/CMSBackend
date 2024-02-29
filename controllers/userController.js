@@ -7,7 +7,9 @@ const bcrypt = require('bcrypt')
 // @route GET /users
 // @access Private
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.findAll()
+  const users = await User.findAll({
+    attributes: { exclude: ['password'] },
+  })
   if (!users || !users.length) {
     return res.status(400).json({ message: 'No users found' })
   }
@@ -19,28 +21,32 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @access Public
 const createNewUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, phone, cnic, role, password } = req.body
+  let duplicateCNIC, duplicateEmail, duplicatePhone
 
   //confirm data
-  if ((!cnic || !firstName, !lastName, !email || !phone)) {
+  if ((!firstName, !lastName, !email)) {
     return res.status(400).json({ message: 'All fields are required' })
   }
 
   //check for duplicates
-  const duplicateCNIC = await User.findOne({ where: { cnic: cnic } })
-  const duplicateEmail = await User.findOne({ where: { email: email } })
-  const duplicatePhone = await User.findOne({ where: { phone: phone } })
-
-  if (duplicateCNIC) {
-    return res.status(409).json({ message: 'Duplicate CNIC' })
-  }
+  duplicateEmail = await User.findOne({ where: { email: email } })
   if (duplicateEmail) {
     return res.status(409).json({ message: 'Duplicate Email' })
   }
-  if (duplicatePhone) {
-    return res.status(409).json({ message: 'Duplicate Phone' })
+
+  if (cnic) {
+    duplicateCNIC = await User.findOne({ where: { cnic: cnic } })
+    if (duplicateCNIC) {
+      return res.status(409).json({ message: 'Duplicate CNIC' })
+    }
   }
 
-  // hash pwd
+  if (phone) {
+    duplicatePhone = await User.findOne({ where: { phone: phone } })
+    if (duplicatePhone) {
+      return res.status(409).json({ message: 'Duplicate Phone' })
+    }
+  }
 
   const user = {
     cnic,
@@ -50,10 +56,12 @@ const createNewUser = asyncHandler(async (req, res) => {
     phone,
   }
 
+  // if role is defined, add to user object
   if (role && role === 'admin') {
     user.role = role
   }
 
+  // hash pwd and add to user object
   if (password) {
     let hashPwd = await bcrypt.hash(password, 10)
     user.password = hashPwd
