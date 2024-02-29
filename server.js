@@ -40,7 +40,7 @@ app.all('*', (req, res) => {
 app.use(errorHandler)
 //{force: true} only for development
 db.sequelize
-  .sync()
+  .sync({ force: true })
   .then(() => {
     console.log('Synced db.')
   })

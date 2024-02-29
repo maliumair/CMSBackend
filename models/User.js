@@ -20,15 +20,13 @@ module.exports = (sequelize, DataTypes) => {
     },
     phone: {
       type: DataTypes.STRING,
-      required: true,
       unique: true,
-      allowNull: false,
+      allowNull: true,
     },
     cnic: {
       type: DataTypes.STRING,
-      required: true,
       unique: true,
-      allowNull: false,
+      allowNull: true,
     },
     avatar: {
       type: DataTypes.TEXT,
