@@ -1,5 +1,6 @@
 const db = require('../models')
-const user = db.users
+const User = db.users
+const VerificationToken = db.verificationTokens
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const asyncHandler = require('express-async-handler')
@@ -14,7 +15,7 @@ const login = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'All fields are required' })
   }
 
-  const foundUser = await user.findOne({ where: { email: email } })
+  const foundUser = await User.findOne({ where: { email: email } })
   // can also check for foundUser.active here -- active field not available in CMS project
   if (!foundUser) {
     return res.status(401).json({ message: 'Email is not registered!' })
@@ -24,6 +25,16 @@ const login = asyncHandler(async (req, res) => {
 
   if (!match) {
     return res.status(401).json({ message: 'Invalid Password' })
+  }
+
+  if (!foundUser.isEmailVerified) {
+    return res.status(401).json({ message: 'Email address is not verified.' })
+  }
+
+  if (!foundUser.isApproved) {
+    return res.status(401).json({
+      message: 'Your account is pending Approval. Please try again later',
+    })
   }
 
   const accessToken = jwt.sign(
@@ -68,7 +79,7 @@ const refresh = asyncHandler(async (req, res) => {
     asyncHandler(async (err, decoded) => {
       if (err) return res.status(403).json({ message: 'Forbidden' })
 
-      const foundUser = await user.findOne({ where: { email: decoded.email } })
+      const foundUser = await User.findOne({ where: { email: decoded.email } })
 
       if (!foundUser) return res.status(401).json({ message: 'Unauthorized' })
 
@@ -104,8 +115,45 @@ const logout = asyncHandler(async (req, res) => {
   res.json({ message: 'Cookie cleared' })
 })
 
+// @desc Email Verification
+// @Route POST /auth/verify_email
+// @access Public
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { token, uid } = req.body
+  const user = await User.findOne({ where: { id: uid } })
+  const verified = await VerificationToken.findOne({
+    where: { token: token, userId: uid },
+  })
+  if (user.isEmailVerified) {
+    return res.json({ message: 'Email verification Successful' })
+  }
+
+  if (!verified) {
+    return res
+      .status(401)
+      .json({ message: 'Invalid Verification Token. Please try again!' })
+  }
+
+  await User.update(
+    { isEmailVerified: true },
+    {
+      where: {
+        id: uid,
+      },
+    }
+  )
+  await VerificationToken.destroy({
+    where: {
+      token: token,
+      userId: uid,
+    },
+  })
+  return res.json({ message: 'Email verification Successful!' })
+})
+
 module.exports = {
   login,
   refresh,
   logout,
+  verifyEmail,
 }

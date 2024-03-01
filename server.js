@@ -41,8 +41,9 @@ app.use(errorHandler)
 //{force: true} only for development
 db.sequelize
   .sync({ force: true })
-  .then(() => {
+  .then(async () => {
     console.log('Synced db.')
+    await db.superAdmin()
   })
   .catch((err) => {
     console.log('Failed to sync db: ' + err.message)
@@ -51,12 +52,5 @@ db.sequelize
       'sequelizeErrLog.log'
     )
   })
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
 
-// mongoose.connection.once('open', () => {
-//   console.log('Connected to MongoDB')
-// })
-// mongoose.connection.on('error', (err) => {
-//   console.log(err)
-//
-// })
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`))

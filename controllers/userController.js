@@ -1,5 +1,8 @@
+const crypto = require('crypto')
 const db = require('../models/')
 const User = db.users
+const VerificationToken = db.verificationTokens
+const transporter = require('../config/mailer')
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 
@@ -28,6 +31,13 @@ const createNewUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'All fields are required' })
   }
 
+  // Defining user object
+  const user = {
+    firstName,
+    lastName,
+    email,
+  }
+
   //check for duplicates
   duplicateEmail = await User.findOne({ where: { email: email } })
   if (duplicateEmail) {
@@ -39,6 +49,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     if (duplicateCNIC) {
       return res.status(409).json({ message: 'Duplicate CNIC' })
     }
+    user.cnic = cnic
   }
 
   if (phone) {
@@ -46,19 +57,14 @@ const createNewUser = asyncHandler(async (req, res) => {
     if (duplicatePhone) {
       return res.status(409).json({ message: 'Duplicate Phone' })
     }
-  }
-
-  const user = {
-    cnic,
-    firstName,
-    lastName,
-    email,
-    phone,
+    user.phone = phone
   }
 
   // if role is defined, add to user object
   if (role && role === 'admin') {
     user.role = role
+    user.isEmailVerified = false
+    user.isApproved = false
   }
 
   // hash pwd and add to user object
@@ -70,7 +76,14 @@ const createNewUser = asyncHandler(async (req, res) => {
   //create and store new user
   try {
     const result = await User.create(user)
-    if (result) {
+    const verificationToken = {
+      token: crypto.randomBytes(64).toString('hex'),
+      userId: result.id,
+    }
+    const result2 = await VerificationToken.create(verificationToken)
+    if (result && result2) {
+      await sendVerificationEmail(result.email, result.id, result2.token)
+
       res.status(201).json({ message: `New user with email: ${email} created` })
     } else {
       res.status(400).json({ message: 'Invalid User Data received' })
@@ -90,6 +103,28 @@ const updateUser = asyncHandler(async (req, res) => {})
 // @access Private
 
 const deleteUser = asyncHandler(async (req, res) => {})
+
+async function sendVerificationEmail(email, userId, token) {
+  const mailOptions = {
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: 'Verify Your Email Address',
+    text:
+      'Please click on the link below to verify your email address. ' +
+      process.env.CLIENT_HOST +
+      '/verify_email?token=' +
+      token +
+      '&uid=' +
+      userId,
+  }
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Error sending Verification email: ', error)
+    } else {
+      console.log('Verification Email sent: ', info.response)
+    }
+  })
+}
 
 module.exports = {
   createNewUser,
