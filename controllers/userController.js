@@ -5,18 +5,25 @@ const VerificationToken = db.verificationTokens
 const transporter = require('../config/mailer')
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
+const { getPagination, getPagingData } = require('../utils/pagination')
 
 // @desc Get All Users
 // @route GET /users
 // @access Private
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.findAll({
+  const { page, size } = req.query
+  const { limit, offset } = getPagination(page, size)
+  const users = await User.findAndCountAll({
+    limit,
+    offset,
     attributes: { exclude: ['password'] },
   })
-  if (!users || !users.length) {
+  if (!users?.rows || !users?.rows?.length) {
     return res.status(400).json({ message: 'No users found' })
+  } else {
+    const response = getPagingData(users, page, limit)
+    return res.json(response)
   }
-  return res.json(users)
 })
 
 // @desc Create New User
@@ -98,10 +105,24 @@ const createNewUser = asyncHandler(async (req, res) => {
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {})
 
+// @desc Approve User
+// @route PATCH /users/approve
+// @access Private
+const approveUser = asyncHandler(async (req, res) => {
+  const { id } = req.body
+  console.log(id, req.body)
+
+  const user = await User.findOne({ where: { id: id } })
+  if (!user) {
+    return res.status(401).json({ message: 'User not found' })
+  }
+
+  await User.update({ isApproved: true }, { where: { id: id } })
+  res.json({ message: 'User approved!' })
+})
 // @desc delete User
 // @route DELETE /users
 // @access Private
-
 const deleteUser = asyncHandler(async (req, res) => {})
 
 async function sendVerificationEmail(email, userId, token) {
@@ -131,4 +152,5 @@ module.exports = {
   getAllUsers,
   updateUser,
   deleteUser,
+  approveUser,
 }

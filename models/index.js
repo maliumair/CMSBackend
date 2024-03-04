@@ -16,6 +16,8 @@ const db = {}
 db.Sequelize = Sequelize
 db.sequelize = sequelize
 db.users = require('./User.js')(sequelize, DataTypes)
+db.deals = require('./Deal.js')(sequelize, DataTypes)
+db.installments = require('./Installment.js')(sequelize, DataTypes)
 db.verificationTokens = require('./VerificationToken.js')(sequelize, DataTypes)
 db.users.hasOne(db.verificationTokens)
 
