@@ -124,6 +124,8 @@ const createNewDeal = asyncHandler(async (req, res) => {
   await userRow.addAddresses([permanent, mailing])
   await userRow.addDeals([dealRow])
   await dealRow.addInstallments(installmentArray)
+
+  res.json({ message: 'Deal Creation Successful' })
 })
 
 // @desc Update Deal
