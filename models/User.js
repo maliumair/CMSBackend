@@ -12,6 +12,15 @@ module.exports = (sequelize, DataTypes) => {
       required: true,
       allowNull: false,
     },
+    relationName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    relation: {
+      type: DataTypes.ENUM,
+      values: ['Father', 'Husband'],
+      allowNull: true,
+    },
     email: {
       type: DataTypes.STRING,
       required: true,

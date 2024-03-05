@@ -5,7 +5,22 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       required: true,
     },
+    installmentPercentage: {
+      type: DataTypes.DOUBLE,
+      defaultValue: 0,
+      allowNull: false,
+    },
+    installmentFixed: {
+      type: DataTypes.DOUBLE,
+      defaultValue: 0,
+      allowNull: false,
+    },
     installmentAmount: {
+      type: DataTypes.DOUBLE,
+      defaultValue: 0,
+      allowNull: false,
+    },
+    installmentAmountPaid: {
       type: DataTypes.DOUBLE,
       defaultValue: 0,
       allowNull: false,
@@ -17,8 +32,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     installmentPaidOn: {
       type: DataTypes.DATE,
-      allowNull: false,
-      required: true,
+      allowNull: true,
     },
     isPaid: {
       type: DataTypes.BOOLEAN,

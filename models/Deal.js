@@ -69,46 +69,17 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: 0,
     },
-    bookingPercentage: {
+    rentPercentage: {
       type: DataTypes.DOUBLE,
-      defaultValue: 0,
+      allowNull: true,
     },
-    bookingAmount: {
+    rentFixed: {
       type: DataTypes.DOUBLE,
-      defaultValue: 0,
+      allowNull: true,
     },
-    bookingPaid: {
+    rentTotal: {
       type: DataTypes.DOUBLE,
-      defaultValue: 0,
-    },
-    confirmationPercentage: {
-      type: DataTypes.DOUBLE,
-      defaultValue: 0,
-    },
-    confirmationAmount: {
-      type: DataTypes.DOUBLE,
-      defaultValue: 0,
-    },
-    confirmationPaid: {
-      type: DataTypes.DOUBLE,
-      defaultValue: 0,
-    },
-    confirmationDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: addMonths(Date.now(), 2),
-    },
-    terminalPercentage: {
-      type: DataTypes.DOUBLE,
-      defaultValue: 0,
-    },
-    terminalFixed: {
-      type: DataTypes.DOUBLE,
-      defaultValue: 0,
-    },
-    totalTerminal: {
-      type: DataTypes.DOUBLE,
-      defaultValue: 0,
+      allowNull: true,
     },
   })
   return Deal
