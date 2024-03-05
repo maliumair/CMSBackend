@@ -1,7 +1,6 @@
 const dbConfig = require('../config/dbConfig.js')
 const { Sequelize, DataTypes } = require('sequelize')
-const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
-  host: dbConfig.HOST,
+const sequelize = new Sequelize(dbConfig.MYSQL_URL, {
   dialect: dbConfig.dialect,
   pool: {
     max: dbConfig.pool.max,
