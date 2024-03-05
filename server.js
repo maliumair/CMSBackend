@@ -39,7 +39,9 @@ app.all('*', (req, res) => {
 })
 
 app.use(errorHandler)
-//{force: true} only for development
+ // only for development
+// {force: true}
+ // only for development
 db.sequelize
   .sync({ force: true })
   .then(async () => {
