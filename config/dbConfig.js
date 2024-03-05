@@ -1,9 +1,10 @@
 module.exports = {
   HOST: process.env.MYSQLHOST,
-  PORT: process.env.MYSQLPORT,
+  PORT: 3306,
   USER: process.env.MYSQLUSER,
   PASSWORD: process.env.MYSQLPASSWORD,
   DB: process.env.MYSQLDATABASE,
+  MYSQL_URL: `mysql://root:@localhost:3306/cms_dev`,
   dialect: 'mysql',
   pool: {
     max: 5,
