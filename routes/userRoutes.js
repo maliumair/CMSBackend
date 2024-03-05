@@ -13,4 +13,5 @@ router
   .patch(verifyJWT, userController.updateUser)
   .delete(verifyJWT, userController.deleteUser)
 
+router.patch('/approve', verifyJWT, userController.approveUser)
 module.exports = router

@@ -12,6 +12,15 @@ module.exports = (sequelize, DataTypes) => {
       required: true,
       allowNull: false,
     },
+    relationName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    relation: {
+      type: DataTypes.ENUM,
+      values: ['Father', 'Husband'],
+      allowNull: true,
+    },
     email: {
       type: DataTypes.STRING,
       required: true,
@@ -20,15 +29,13 @@ module.exports = (sequelize, DataTypes) => {
     },
     phone: {
       type: DataTypes.STRING,
-      required: true,
       unique: true,
-      allowNull: false,
+      allowNull: true,
     },
     cnic: {
       type: DataTypes.STRING,
-      required: true,
       unique: true,
-      allowNull: false,
+      allowNull: true,
     },
     avatar: {
       type: DataTypes.TEXT,
@@ -47,8 +54,23 @@ module.exports = (sequelize, DataTypes) => {
     },
     role: {
       type: DataTypes.ENUM,
-      values: ['admin', 'customer'],
+      values: ['admin', 'customer', 'superadmin'],
       defaultValue: 'customer',
+      allowNull: false,
+    },
+    isEmailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      allowNull: false,
+    },
+    isApproved: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      allowNull: false,
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
       allowNull: false,
     },
   })
