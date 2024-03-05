@@ -43,7 +43,7 @@ app.use(errorHandler)
 // {force: true}
 // only for development
 db.sequelize
-  .sync()
+  .sync({ force: true })
   .then(async () => {
     console.log('Synced db.')
     await db.superAdmin()
