@@ -58,6 +58,7 @@ const login = asyncHandler(async (req, res) => {
     httpOnly: true,
     sameSite: 'None',
     secure: true,
+    partitioned: true,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   })
 
