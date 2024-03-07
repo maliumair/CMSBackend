@@ -10,7 +10,7 @@ const getPagingData = (data, page, limit) => {
   const currentPage = page ? +page : 0
   const totalPages = Math.ceil(count / limit)
 
-  return { count, rows, totalPages, currentPage }
+  return { rows, meta: { count, totalPages, currentPage } }
 }
 
 module.exports = {
