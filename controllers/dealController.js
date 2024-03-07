@@ -37,7 +37,6 @@ const createNewDeal = asyncHandler(async (req, res) => {
     product,
     installments,
   } = dealData
-  console.log(installments)
 
   // Writing new save function to include lump sum scenario.
   duplicateEmail = await User.findOne({ where: { email: user.email } })
@@ -107,7 +106,6 @@ const createNewDeal = asyncHandler(async (req, res) => {
 
   let installmentArray = []
   for (let i = 0; i < installments.length; i++) {
-    console.log(new Date(installments[i].unformattedDate))
     let installmentRow = await Installment.create({
       installmentType: installments[i].type,
       installmentPercentage: installments[i].percentage,
@@ -126,6 +124,8 @@ const createNewDeal = asyncHandler(async (req, res) => {
   await userRow.addAddresses([permanent, mailing])
   await userRow.addDeals([dealRow])
   await dealRow.addInstallments(installmentArray)
+
+  res.json({ message: 'Deal Creation Successful' })
 })
 
 // @desc Update Deal
