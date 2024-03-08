@@ -12,14 +12,40 @@ const asyncHandler = require('express-async-handler')
 // @route GET /deals
 // @access Private
 const getAllDeals = asyncHandler(async (req, res) => {
-  const { page, size } = req.query
+  const { page, size, filter } = req.query
   const { limit, offset } = getPagination(page, size)
+  let filterClause = {}
+  console.log(filter)
+  if (filter) {
+    filterClause = { email: filter }
+  }
+  console.log(filterClause)
   const deals = await Deal.findAndCountAll({
     limit,
     offset,
     distinct: true,
     col: Deal.id,
-    include: { all: true, nested: true },
+    include: [
+      {
+        model: User,
+        required: true,
+        where: filterClause,
+        include: [
+          {
+            model: Address,
+            required: true,
+          },
+          {
+            model: Nominee,
+            required: true,
+          },
+        ],
+      },
+      {
+        model: Installment,
+        required: true,
+      },
+    ],
   })
   if (!deals?.rows || !deals?.rows?.length) {
     return res.status(400).json({ message: 'No deals found' })
