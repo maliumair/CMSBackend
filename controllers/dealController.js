@@ -12,9 +12,21 @@ const asyncHandler = require('express-async-handler')
 // @route GET /deals
 // @access Private
 const getAllDeals = asyncHandler(async (req, res) => {
-  const { page, size, userId } = req.query
-  var condition = userId ? { userId: userId } : null
+  const { page, size } = req.query
   const { limit, offset } = getPagination(page, size)
+  const deals = await Deal.findAndCountAll({
+    limit,
+    offset,
+    distinct: true,
+    col: Deal.id,
+    include: { all: true, nested: true },
+  })
+  if (!deals?.rows || !deals?.rows?.length) {
+    return res.status(400).json({ message: 'No deals found' })
+  } else {
+    const response = getPagingData(deals, page, limit)
+    return res.json(response)
+  }
 })
 
 // @desc Create New Deal
