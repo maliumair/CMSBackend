@@ -12,6 +12,7 @@ const { getPagination, getPagingData } = require('../utils/pagination')
 // @access Private
 const getAllUsers = asyncHandler(async (req, res) => {
   const { page, size } = req.query
+  console.log(page, size)
   const { limit, offset } = getPagination(page, size)
   const users = await User.findAndCountAll({
     limit,
