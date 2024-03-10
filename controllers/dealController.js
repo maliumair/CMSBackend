@@ -2,6 +2,7 @@ const db = require('../models/')
 const { getPagination, getPagingData } = require('../utils/pagination')
 const User = db.users
 const Deal = db.deals
+const sequelize = db.sequelize
 const Installment = db.installments
 const Address = db.addresses
 const Nominee = db.nominees
@@ -55,6 +56,50 @@ const getAllDeals = asyncHandler(async (req, res) => {
   }
 })
 
+// @desc Get deal by Id
+// @Route POST /deals/:id
+// @access private
+
+const getDealById = asyncHandler(async (req, res) => {
+  const id = req.params.id
+  const filter = req.query.filter
+  let filterClause = {}
+  console.log(filter)
+  if (filter) {
+    filterClause = { email: filter }
+  }
+  console.log(filterClause)
+  const deal = await Deal.findOne({
+    where: { id: id },
+    include: [
+      {
+        model: User,
+        required: true,
+        where: filterClause,
+        include: [
+          {
+            model: Address,
+            required: true,
+          },
+          {
+            model: Nominee,
+            required: true,
+          },
+        ],
+      },
+      {
+        model: Installment,
+        required: true,
+      },
+    ],
+  })
+
+  if (!deal) {
+    return res.status(404).json('Deal not found')
+  }
+
+  return res.json(deal)
+})
 // @desc Create New Deal
 // @Route POST /deals
 // @access private
@@ -91,22 +136,6 @@ const createNewDeal = asyncHandler(async (req, res) => {
     return res.status(409).json({ message: 'Duplicate Phone' })
   }
 
-  // New User
-  const userRow = await User.create(user)
-
-  // New Nominee
-  const nomineeRow = await Nominee.create(nominee)
-
-  //Addresses
-  const permanent = await Address.create({
-    ...addresses.permanent,
-    type: 'Permanent',
-  })
-  const mailing = await Address.create({
-    ...addresses.mailing,
-    type: 'Mailing',
-  })
-
   //Deal
   const { type, unit, totalArea, unitPrice, totalPrice } = product
   const { commissionPercentage, commissionFixed, totalCommission } =
@@ -115,55 +144,87 @@ const createNewDeal = asyncHandler(async (req, res) => {
   const { plan, planDuration, bookingRental } = booking
   const { total, fixed, percentage } = rental
 
-  const dealRow = await Deal.create({
-    productType: type,
-    measuringUnit: unit,
-    totalArea,
-    unitPrice,
-    totalPrice,
-    commissionPercentage,
-    commissionFixed,
-    totalCommission,
-    discountPercentage,
-    discountFixed,
-    totalDiscount,
-    dealType: plan,
-    duration: planDuration,
-  })
+  try {
+    await sequelize.transaction(async (t) => {
+      // New User
+      const userRow = await User.create(user, { transaction: t })
+      // New Nominee
+      const nomineeRow = await Nominee.create(nominee, { transaction: t })
+      //Addresses
+      const permanent = await Address.create(
+        {
+          ...addresses.permanent,
+          type: 'Permanent',
+        },
+        { transaction: t }
+      )
+      const mailing = await Address.create(
+        {
+          ...addresses.mailing,
+          type: 'Mailing',
+        },
+        { transaction: t }
+      )
+      const dealRow = await Deal.create(
+        {
+          productType: type,
+          measuringUnit: unit,
+          totalArea,
+          unitPrice,
+          totalPrice,
+          commissionPercentage,
+          commissionFixed,
+          totalCommission,
+          discountPercentage,
+          discountFixed,
+          totalDiscount,
+          dealType: plan,
+          duration: planDuration,
+        },
+        { transaction: t }
+      )
+      if (plan === 'Lump Sum' && bookingRental) {
+        Deal.update(
+          {
+            rentPercentage: percentage,
+            rentFixed: fixed,
+            rentTotal: total,
+          },
+          { where: { id: dealRow.id } },
+          { transaction: t }
+        )
+      }
+      let installmentArray = []
+      for (let i = 0; i < installments.length; i++) {
+        let installmentRow = await Installment.create(
+          {
+            installmentType: installments[i].type,
+            installmentPercentage: installments[i].percentage,
+            installmentFixed: installments[i].fixed,
+            installmentAmount: installments[i].amount,
+            installmentAmountPaid: installments[i].paid,
+            installmentDueOn: new Date(installments[i].unformattedDate),
+            isPaid: installments[i].isPaid,
+            installmentPaidOn: installments[i].paidOn,
+          },
+          { transaction: t }
+        )
 
-  if (plan === 'Lump Sum' && bookingRental) {
-    Deal.update(
-      {
-        rentPercentage: percentage,
-        rentFixed: fixed,
-        rentTotal: total,
-      },
-      { where: { id: dealRow.id } }
-    )
-  }
-
-  let installmentArray = []
-  for (let i = 0; i < installments.length; i++) {
-    let installmentRow = await Installment.create({
-      installmentType: installments[i].type,
-      installmentPercentage: installments[i].percentage,
-      installmentFixed: installments[i].fixed,
-      installmentAmount: installments[i].amount,
-      installmentAmountPaid: installments[i].paid,
-      installmentDueOn: new Date(installments[i].unformattedDate),
-      isPaid: installments[i].isPaid,
+        installmentArray.push(installmentRow)
+      }
+      //Adding foreign references
+      await userRow.setNominee(nomineeRow, { transaction: t })
+      await userRow.addAddresses([permanent, mailing], { transaction: t })
+      await userRow.addDeals([dealRow], { transaction: t })
+      await dealRow.addInstallments(installmentArray, { transaction: t })
     })
 
-    installmentArray.push(installmentRow)
+    res.json({ message: 'Deal Creation Successful' })
+  } catch (err) {
+    res.status(400).json({
+      message: `There was an error while creating the deal.`,
+    })
   }
-
-  //Adding foreign references
-  await userRow.setNominee(nomineeRow)
-  await userRow.addAddresses([permanent, mailing])
-  await userRow.addDeals([dealRow])
-  await dealRow.addInstallments(installmentArray)
-
-  res.json({ message: 'Deal Creation Successful' })
 })
 
 // @desc Update Deal
@@ -181,4 +242,5 @@ module.exports = {
   getAllDeals,
   updateDeal,
   deleteDeal,
+  getDealById,
 }

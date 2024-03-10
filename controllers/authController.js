@@ -2,7 +2,10 @@ const db = require('../models')
 const User = db.users
 const VerificationToken = db.verificationTokens
 const bcrypt = require('bcrypt')
+const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
+const { addMinutes } = require('date-fns')
+const { sendVerificationEmail } = require('../utils/emails')
 const asyncHandler = require('express-async-handler')
 
 // @desc Login
@@ -121,6 +124,9 @@ const logout = asyncHandler(async (req, res) => {
 const verifyEmail = asyncHandler(async (req, res) => {
   const { token, uid } = req.body
   const user = await User.findOne({ where: { id: uid } })
+  if (!user) {
+    return res.status(400).json({ message: 'User does not exist' })
+  }
   const verified = await VerificationToken.findOne({
     where: { token: token, userId: uid },
   })
@@ -128,12 +134,24 @@ const verifyEmail = asyncHandler(async (req, res) => {
     return res.json({ message: 'Email verification Successful' })
   }
 
-  if (!verified) {
-    return res
-      .status(401)
-      .json({ message: 'Invalid Verification Token. Please try again!' })
+  if (!verified || verified.type !== 'Email Verification') {
+    return res.status(401).json({
+      message:
+        'Invalid Verification Token. Please request a new one to continue!',
+    })
   }
 
+  if (addMinutes(verified.createdAt, 10) < new Date()) {
+    await VerificationToken.destroy({
+      where: {
+        token: token,
+        userId: uid,
+      },
+    })
+    return res
+      .status(401)
+      .json({ message: 'Your verification link has expired' })
+  }
   await User.update(
     { isEmailVerified: true },
     {
@@ -151,9 +169,36 @@ const verifyEmail = asyncHandler(async (req, res) => {
   return res.json({ message: 'Email verification Successful!' })
 })
 
+const resendVerificationLink = asyncHandler(async (req, res) => {
+  const { id } = req.body
+  const user = await User.findByPk(id)
+  if (!user) {
+    return res.status(400).json({ message: 'User does not exist' })
+  }
+  try {
+    const verificationToken = {
+      token: crypto.randomBytes(64).toString('hex'),
+      userId: user.id,
+      type: 'Email Verification',
+    }
+    const result = await VerificationToken.create(verificationToken)
+    console.log(user.email)
+    if (result) {
+      await sendVerificationEmail(user.email, user.id, result.token)
+
+      res.status(201).json({ message: `New Verification Link Sent` })
+    } else {
+      res.status(400).json({ message: 'Invalid Data received' })
+    }
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
 module.exports = {
   login,
   refresh,
   logout,
   verifyEmail,
+  resendVerificationLink,
 }

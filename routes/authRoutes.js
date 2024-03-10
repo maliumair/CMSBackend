@@ -7,6 +7,9 @@ router.route('/').post(loginLimiter, authController.login)
 
 router.route('/refresh').get(authController.refresh)
 router.route('/verify_email').post(authController.verifyEmail)
+router
+  .route('/resend_verification_link')
+  .post(authController.resendVerificationLink)
 
 router.route('/logout').post(authController.logout)
 

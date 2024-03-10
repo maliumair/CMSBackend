@@ -14,4 +14,6 @@ router
   .delete(verifyJWT, userController.deleteUser)
 
 router.patch('/approve', verifyJWT, userController.approveUser)
+router.post('/forgot_password', userController.forgotPassword)
+router.post('/reset_password', userController.resetPassword)
 module.exports = router
