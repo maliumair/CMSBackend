@@ -3,6 +3,9 @@ module.exports = (sequelize, DataTypes) => {
     token: {
       type: DataTypes.STRING,
     },
+    type: {
+      type: DataTypes.STRING,
+    },
   })
   return VerificationToken
 }

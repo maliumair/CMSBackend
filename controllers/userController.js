@@ -2,10 +2,14 @@ const crypto = require('crypto')
 const db = require('../models/')
 const User = db.users
 const VerificationToken = db.verificationTokens
-const transporter = require('../config/mailer')
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const { getPagination, getPagingData } = require('../utils/pagination')
+const { addMinutes } = require('date-fns')
+const {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} = require('../utils/emails')
 
 // @desc Get All Users
 // @route GET /users
@@ -87,6 +91,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     const verificationToken = {
       token: crypto.randomBytes(64).toString('hex'),
       userId: result.id,
+      type: 'Email Verification',
     }
     const result2 = await VerificationToken.create(verificationToken)
     if (result && result2) {
@@ -126,27 +131,72 @@ const approveUser = asyncHandler(async (req, res) => {
 // @access Private
 const deleteUser = asyncHandler(async (req, res) => {})
 
-async function sendVerificationEmail(email, userId, token) {
-  const mailOptions = {
-    from: process.env.MAIL_USER,
-    to: email,
-    subject: 'Verify Your Email Address',
-    text:
-      'Please click on the link below to verify your email address. ' +
-      process.env.CLIENT_HOST +
-      '/verify_email?token=' +
-      token +
-      '&uid=' +
-      userId,
+// @Desc ForgotPassword
+// Route POST /users/forgot_password
+// @access Public
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body
+  const user = await User.findOne({ where: { email: email } })
+  if (!user) {
+    return res.status(404).json({ message: 'Email not found' })
   }
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error('Error sending Verification email: ', error)
-    } else {
-      console.log('Verification Email sent: ', info.response)
-    }
+  const verificationToken = {
+    token: crypto.randomBytes(64).toString('hex'),
+    userId: user.id,
+    type: 'Password Reset',
+  }
+  const result = await VerificationToken.create(verificationToken)
+  if (!result) {
+    return res
+      .status(400)
+      .json({ message: 'There was an error while processing your request' })
+  }
+
+  await sendPasswordResetEmail(user.email, user.id, result.token)
+  res.json({ message: 'We have sent you an email with a password reset link' })
+})
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { uid, password, token } = req.body
+  console.log(req.body)
+  const user = await User.findByPk(uid)
+  if (!user) {
+    res.status(400).json({ message: 'User not Found' })
+  }
+  const verified = await VerificationToken.findOne({
+    where: { userId: uid, token: token },
   })
-}
+
+  if (!verified || verified.type !== 'Password Reset') {
+    res.status(400).json({ message: 'Invalid Password Reset Link.' })
+  }
+  if (addMinutes(verified.createdAt, 10) < new Date()) {
+    await VerificationToken.destroy({
+      where: {
+        token: token,
+        userId: uid,
+      },
+    })
+    return res
+      .status(401)
+      .json({ message: 'Your verification link has expired' })
+  }
+  const hashed = await bcrypt.hash(password, 10)
+  await User.update(
+    {
+      password: hashed,
+    },
+    { where: { id: uid } }
+  )
+  await VerificationToken.destroy({
+    where: {
+      token: token,
+      userId: uid,
+    },
+  })
+
+  res.json({ message: 'Password Reset Successfully' })
+})
 
 module.exports = {
   createNewUser,
@@ -154,4 +204,6 @@ module.exports = {
   updateUser,
   deleteUser,
   approveUser,
+  forgotPassword,
+  resetPassword,
 }

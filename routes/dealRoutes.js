@@ -13,4 +13,5 @@ router
   .patch(dealController.updateDeal)
   .delete(dealController.deleteDeal)
 
+router.get('/:id', dealController.getDealById)
 module.exports = router
