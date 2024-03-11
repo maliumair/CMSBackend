@@ -57,24 +57,22 @@ const login = asyncHandler(async (req, res) => {
     { expiresIn: '7d' }
   )
 
-  res.cookie('jwt', refreshToken, {
-    httpOnly: true,
-    sameSite: 'None',
-    secure: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  })
+  // res.cookie('jwt', refreshToken, {
+  //   httpOnly: true,
+  //   sameSite: 'None',
+  //   secure: true,
+  //   maxAge: 7 * 24 * 60 * 60 * 1000,
+  // })
 
-  res.json({ accessToken })
+  res.json({ accessToken: accessToken, refreshToken: refreshToken })
 })
 
 // @desc Refresh
 // @Route POST /auth/refresh
 // @access Public
 const refresh = asyncHandler(async (req, res) => {
-  const cookies = req.cookies
-  if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' })
-
-  const refreshToken = cookies.jwt
+  const { refreshToken } = req.body
+  if (!refreshToken) return res.status(401).json({ message: 'Unauthorized' })
 
   jwt.verify(
     refreshToken,
@@ -106,16 +104,9 @@ const refresh = asyncHandler(async (req, res) => {
 // @Route POST /auth/logout
 // @access Public
 const logout = asyncHandler(async (req, res) => {
-  const cookies = req.cookies
-  if (!cookies?.jwt) return res.status(204)
-
-  res.clearCookie('jwt', {
-    httpOnly: true,
-    sameSite: 'None',
-    secure: true,
-  })
-
-  res.json({ message: 'Cookie cleared' })
+  const { refreshToken } = req.body
+  if (!refreshToken) return res.status(204)
+  res.json({ message: 'Token Cleared' })
 })
 
 // @desc Email Verification
