@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const db = require('../models/')
 const User = db.users
 const VerificationToken = db.verificationTokens
+const sequelize = db.sequelize
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const { getPagination, getPagingData } = require('../utils/pagination')
@@ -10,24 +11,51 @@ const {
   sendVerificationEmail,
   sendPasswordResetEmail,
 } = require('../utils/emails')
+const { Op } = require('sequelize')
 
 // @desc Get All Users
 // @route GET /users
 // @access Private
 const getAllUsers = asyncHandler(async (req, res) => {
-  const { page, size } = req.query
-  console.log(page, size)
+  const { page, size, search, sortBy, sort } = req.query
+  console.log(sortBy, sort)
+  let filterClause = {}
+  let OrderClause = []
+  if (sortBy) {
+    if (sort === 'true') {
+      OrderClause.push([`${sortBy}`, 'DESC'])
+    } else {
+      OrderClause.push([`${sortBy}`, 'ASC'])
+    }
+  }
+
+  if (search) {
+    filterClause = {
+      [Op.or]: [
+        { firstName: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+        { lastName: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+        { email: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+        { cnic: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+      ],
+    }
+  }
   const { limit, offset } = getPagination(page, size)
-  const users = await User.findAndCountAll({
-    limit,
-    offset,
-    attributes: { exclude: ['password'] },
-  })
-  if (!users?.rows || !users?.rows?.length) {
-    return res.status(400).json({ message: 'No users found' })
-  } else {
-    const response = getPagingData(users, page, limit)
-    return res.json(response)
+  try {
+    const users = await User.findAndCountAll({
+      where: filterClause,
+      order: OrderClause,
+      limit,
+      offset,
+      attributes: { exclude: ['password'] },
+    })
+    if (!users?.rows || !users?.rows?.length) {
+      return res.status(400).json({ message: 'No users found' })
+    } else {
+      const response = getPagingData(users, page, limit)
+      return res.json(response)
+    }
+  } catch (e) {
+    console.log(e)
   }
 })
 

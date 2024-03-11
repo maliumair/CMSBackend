@@ -6,6 +6,8 @@ const sequelize = db.sequelize
 const Installment = db.installments
 const Address = db.addresses
 const Nominee = db.nominees
+const { Op } = require('sequelize')
+
 // const Deal = db.deals
 const asyncHandler = require('express-async-handler')
 
@@ -13,46 +15,73 @@ const asyncHandler = require('express-async-handler')
 // @route GET /deals
 // @access Private
 const getAllDeals = asyncHandler(async (req, res) => {
-  const { page, size, filter } = req.query
+  const { page, size, email, search, sortBy, sort } = req.query
+  console.log(search)
   const { limit, offset } = getPagination(page, size)
-  let filterClause = {}
-  console.log(filter)
-  if (filter) {
-    filterClause = { email: filter }
+  let filterEmail = {}
+  let filterSearch = {}
+  let orderClause = []
+  if (email) {
+    filterEmail = { email: email }
   }
-  console.log(filterClause)
-  const deals = await Deal.findAndCountAll({
-    limit,
-    offset,
-    distinct: true,
-    col: Deal.id,
-    include: [
-      {
-        model: User,
-        required: true,
-        where: filterClause,
-        include: [
-          {
-            model: Address,
-            required: true,
-          },
-          {
-            model: Nominee,
-            required: true,
-          },
-        ],
-      },
-      {
-        model: Installment,
-        required: true,
-      },
-    ],
-  })
-  if (!deals?.rows || !deals?.rows?.length) {
-    return res.status(400).json({ message: 'No deals found' })
-  } else {
-    const response = getPagingData(deals, page, limit)
-    return res.json(response)
+
+  if (search) {
+    filterSearch = {
+      [Op.or]: [
+        { dealType: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+        { measuringUnit: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+        { totalArea: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+        { totalPrice: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+        { productType: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
+      ],
+    }
+  }
+
+  if (sortBy) {
+    if (sort === 'true') {
+      orderClause.push([`${sortBy}`, 'DESC'])
+    } else {
+      orderClause.push([`${sortBy}`, 'ASC'])
+    }
+  }
+
+  try {
+    const deals = await Deal.findAndCountAll({
+      where: filterSearch,
+      limit,
+      offset,
+      distinct: true,
+      col: Deal.id,
+      include: [
+        {
+          model: User,
+          required: true,
+          where: filterEmail,
+          include: [
+            {
+              model: Address,
+              required: true,
+            },
+            {
+              model: Nominee,
+              required: true,
+            },
+          ],
+        },
+        {
+          model: Installment,
+          required: true,
+        },
+      ],
+    })
+    if (!deals?.rows || !deals?.rows?.length) {
+      return res.status(400).json({ message: 'No deals found' })
+    } else {
+      const response = getPagingData(deals, page, limit)
+      return res.json(response)
+    }
+  } catch (e) {
+    console.log(e)
   }
 })
 
