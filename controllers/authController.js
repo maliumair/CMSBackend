@@ -27,7 +27,7 @@ const login = asyncHandler(async (req, res) => {
   const match = await bcrypt.compare(password, foundUser.password)
 
   if (!match) {
-    return res.status(401).json({ message: 'Invalid Password' })
+    return res.status(401).json({ message: 'Invalid credentials' })
   }
 
   if (!foundUser.isEmailVerified) {
@@ -37,6 +37,11 @@ const login = asyncHandler(async (req, res) => {
   if (!foundUser.isApproved) {
     return res.status(401).json({
       message: 'Your account is pending Approval. Please try again later',
+    })
+  }
+  if (!foundUser.isActive) {
+    return res.status(401).json({
+      message: 'Your account has been de-activated!',
     })
   }
 
@@ -56,13 +61,6 @@ const login = asyncHandler(async (req, res) => {
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: '7d' }
   )
-
-  // res.cookie('jwt', refreshToken, {
-  //   httpOnly: true,
-  //   sameSite: 'None',
-  //   secure: true,
-  //   maxAge: 7 * 24 * 60 * 60 * 1000,
-  // })
 
   res.json({ accessToken: accessToken, refreshToken: refreshToken })
 })
@@ -175,7 +173,12 @@ const resendVerificationLink = asyncHandler(async (req, res) => {
     const result = await VerificationToken.create(verificationToken)
     console.log(user.email)
     if (result) {
-      await sendVerificationEmail(user.email, user.id, result.token)
+      await sendVerificationEmail(
+        user.email,
+        user.id,
+        user.lastName,
+        result.token
+      )
 
       res.status(201).json({ message: `New Verification Link Sent` })
     } else {

@@ -49,7 +49,10 @@ const getAllUsers = asyncHandler(async (req, res) => {
       attributes: { exclude: ['password'] },
     })
     if (!users?.rows || !users?.rows?.length) {
-      return res.status(400).json({ message: 'No users found' })
+      return res.json({
+        rows: [],
+        meta: { count: 0, totalPages: 0, currentPage: 0 },
+      })
     } else {
       const response = getPagingData(users, page, limit)
       return res.json(response)
@@ -123,7 +126,12 @@ const createNewUser = asyncHandler(async (req, res) => {
     }
     const result2 = await VerificationToken.create(verificationToken)
     if (result && result2) {
-      await sendVerificationEmail(result.email, result.id, result2.token)
+      await sendVerificationEmail(
+        result.email,
+        result.id,
+        user.lastName,
+        result2.token
+      )
 
       res.status(201).json({ message: `New user with email: ${email} created` })
     } else {
@@ -144,8 +152,6 @@ const updateUser = asyncHandler(async (req, res) => {})
 // @access Private
 const approveUser = asyncHandler(async (req, res) => {
   const { id } = req.body
-  console.log(id, req.body)
-
   const user = await User.findOne({ where: { id: id } })
   if (!user) {
     return res.status(401).json({ message: 'User not found' })
@@ -153,6 +159,20 @@ const approveUser = asyncHandler(async (req, res) => {
 
   await User.update({ isApproved: true }, { where: { id: id } })
   res.json({ message: 'User approved!' })
+})
+
+// @desc Activate / Deactivate User
+// @route PATCH /users/active
+// @access Private
+const toggleActiveUser = asyncHandler(async (req, res) => {
+  const { id } = req.body
+  const user = await User.findOne({ where: { id: id } })
+  if (!user) {
+    return res.status(401).json({ message: 'User not found' })
+  }
+
+  await User.update({ isActive: !user.isActive }, { where: { id: id } })
+  res.json({ message: 'User Activation Status Changed!' })
 })
 // @desc delete User
 // @route DELETE /users
@@ -180,7 +200,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
       .json({ message: 'There was an error while processing your request' })
   }
 
-  await sendPasswordResetEmail(user.email, user.id, result.token)
+  await sendPasswordResetEmail(user.email, user.id, user.lastName, result.token)
   res.json({ message: 'We have sent you an email with a password reset link' })
 })
 
@@ -232,6 +252,7 @@ module.exports = {
   updateUser,
   deleteUser,
   approveUser,
+  toggleActiveUser,
   forgotPassword,
   resetPassword,
 }
