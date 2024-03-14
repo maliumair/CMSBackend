@@ -1,4 +1,10 @@
-const regularMail = (messageTitle, messageBody, actionTitle, actionLink) => {
+const regularMail = (
+  messageTitle,
+  lastName,
+  messageBody,
+  actionTitle,
+  actionLink
+) => {
   return `<div
       style="
         max-width: 600px;
@@ -26,6 +32,9 @@ const regularMail = (messageTitle, messageBody, actionTitle, actionLink) => {
           <h2 style="color: #0e1a4e; font-size: 24px; margin-bottom: 10px">
             ${messageTitle}
           </h2>
+          <p style="color: #333333; font-size: 16px; line-height: 1.6">
+            Hi ${lastName},
+          </p>
           <p style="color: #333333; font-size: 16px; line-height: 1.6">
             ${messageBody}
           </p>

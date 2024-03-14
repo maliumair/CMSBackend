@@ -173,7 +173,12 @@ const resendVerificationLink = asyncHandler(async (req, res) => {
     const result = await VerificationToken.create(verificationToken)
     console.log(user.email)
     if (result) {
-      await sendVerificationEmail(user.email, user.id, result.token)
+      await sendVerificationEmail(
+        user.email,
+        user.id,
+        user.lastName,
+        result.token
+      )
 
       res.status(201).json({ message: `New Verification Link Sent` })
     } else {

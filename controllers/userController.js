@@ -126,7 +126,12 @@ const createNewUser = asyncHandler(async (req, res) => {
     }
     const result2 = await VerificationToken.create(verificationToken)
     if (result && result2) {
-      await sendVerificationEmail(result.email, result.id, result2.token)
+      await sendVerificationEmail(
+        result.email,
+        result.id,
+        user.lastName,
+        result2.token
+      )
 
       res.status(201).json({ message: `New user with email: ${email} created` })
     } else {
@@ -195,7 +200,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
       .json({ message: 'There was an error while processing your request' })
   }
 
-  await sendPasswordResetEmail(user.email, user.id, result.token)
+  await sendPasswordResetEmail(user.email, user.id, user.lastName, result.token)
   res.json({ message: 'We have sent you an email with a password reset link' })
 })
 

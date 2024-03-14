@@ -1,11 +1,11 @@
 const transporter = require('../config/mailer')
 const path = require('path')
 const { regularMail } = require('./resources/regular')
-const sendPasswordResetEmail = async (email, userId, token) => {
+const sendPasswordResetEmail = async (email, userId, lastName, token) => {
   const mailOptions = {
     from: process.env.MAIL_USER,
     to: email,
-    subject: 'Rest Your Password',
+    subject: 'Reset Your Password',
     attachments: [
       {
         filename: 'logo-white.png',
@@ -15,6 +15,7 @@ const sendPasswordResetEmail = async (email, userId, token) => {
     ],
     html: regularMail(
       'Reset Your Password',
+      `${lastName}`,
       'Please click on the button below to reset your password.',
       'Reset Password',
       `${process.env.CLIENT_HOST}/reset_password?token=${token}&uid=${userId}`
@@ -29,7 +30,7 @@ const sendPasswordResetEmail = async (email, userId, token) => {
   })
 }
 
-const sendVerificationEmail = async (email, userId, token) => {
+const sendVerificationEmail = async (email, userId, lastName, token) => {
   const mailOptions = {
     from: process.env.MAIL_USER,
     to: email,
@@ -43,6 +44,7 @@ const sendVerificationEmail = async (email, userId, token) => {
     ],
     html: regularMail(
       'Verify Your Email Address',
+      `${lastName}`,
       'Please click on the link below to verify your email address.',
       'Verify Email',
       `${process.env.CLIENT_HOST}/verify_email?token=${token}&uid=${userId}`
