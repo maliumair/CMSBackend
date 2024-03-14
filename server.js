@@ -1,5 +1,7 @@
 require('dotenv').config()
 const express = require('express')
+const { createServer } = require('http')
+const { Server } = require('socket.io')
 const path = require('path')
 const { logger, logEvents } = require('./middlewares/logger')
 const errorHandler = require('./middlewares/errorHandler')
@@ -56,4 +58,16 @@ db.sequelize
     )
   })
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
+const httpServer = createServer(app)
+const io = new Server(httpServer, {
+  cors: {
+    origin: 'http://localhost:5173',
+  },
+})
+io.on('connection', (socket) => {
+  console.log('New Connection')
+})
+io.on('disconnect', (socket) => {
+  console.log('Connection Ended')
+})
+httpServer.listen(PORT, () => console.log(`Server started on port ${PORT}`))

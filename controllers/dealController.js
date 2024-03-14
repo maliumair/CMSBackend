@@ -75,7 +75,10 @@ const getAllDeals = asyncHandler(async (req, res) => {
       ],
     })
     if (!deals?.rows || !deals?.rows?.length) {
-      return res.status(400).json({ message: 'No deals found' })
+      return res.json({
+        rows: [],
+        meta: { count: 0, totalPages: 0, currentPage: 0 },
+      })
     } else {
       const response = getPagingData(deals, page, limit)
       return res.json(response)
