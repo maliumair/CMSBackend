@@ -48,6 +48,7 @@ const getAllDeals = asyncHandler(async (req, res) => {
   try {
     const deals = await Deal.findAndCountAll({
       where: filterSearch,
+      order: orderClause,
       limit,
       offset,
       distinct: true,
@@ -132,11 +133,12 @@ const getDealById = asyncHandler(async (req, res) => {
 
   return res.json(deal)
 })
+
 // @desc Create New Deal
 // @Route POST /deals
 // @access private
 const createNewDeal = asyncHandler(async (req, res) => {
-  //   console.log(req.body)
+  let id = null
   const dealData = req.body
   const {
     user,
@@ -144,10 +146,6 @@ const createNewDeal = asyncHandler(async (req, res) => {
     addresses,
     capital,
     booking,
-    balloon,
-    confirmation,
-    lumpSum,
-    terminal,
     rental,
     product,
     installments,
@@ -170,8 +168,13 @@ const createNewDeal = asyncHandler(async (req, res) => {
 
   //Deal
   const { type, unit, totalArea, unitPrice, totalPrice } = product
-  const { commissionPercentage, commissionFixed, totalCommission } =
-    capital.commission
+  const {
+    commissionPercentage,
+    commissionPerUnit,
+    commissionFixed,
+    totalCommission,
+  } = capital.commission
+
   const { discountPercentage, discountFixed, totalDiscount } = capital.discount
   const { plan, planDuration, bookingRental } = booking
   const { total, fixed, percentage } = rental
@@ -205,6 +208,7 @@ const createNewDeal = asyncHandler(async (req, res) => {
           unitPrice,
           totalPrice,
           commissionPercentage,
+          commissionPerUnit,
           commissionFixed,
           totalCommission,
           discountPercentage,
@@ -249,9 +253,12 @@ const createNewDeal = asyncHandler(async (req, res) => {
       await userRow.addAddresses([permanent, mailing], { transaction: t })
       await userRow.addDeals([dealRow], { transaction: t })
       await dealRow.addInstallments(installmentArray, { transaction: t })
+
+      //Saving Id param
+      id = dealRow.id
     })
 
-    res.json({ message: 'Deal Creation Successful' })
+    res.json({ message: 'Deal Creation Successful', id: id })
   } catch (err) {
     res.status(400).json({
       message: `There was an error while creating the deal.`,
