@@ -37,6 +37,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DOUBLE,
       defaultValue: 0,
     },
+    commissionPerUnit: {
+      type: DataTypes.DOUBLE,
+      defaultValue: 0,
+    },
     commissionFixed: {
       type: DataTypes.DOUBLE,
       defaultValue: 0,

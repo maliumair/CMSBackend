@@ -4,7 +4,7 @@ const dealController = require('../controllers/dealController')
 const verifyJWT = require('../middlewares/verifyJWT')
 
 // This applies security to all routes in this router
-// router.use(verifyJWT)
+router.use(verifyJWT)
 
 router
   .route('/')
