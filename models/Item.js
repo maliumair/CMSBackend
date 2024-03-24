@@ -52,9 +52,15 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'Available',
       allowNull: false,
     },
-    location: {
+    address: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    lat: {
+      type: DataTypes.FLOAT(10, 6),
+    },
+    lng: {
+      type: DataTypes.FLOAT(10, 6),
     },
   })
   return Item

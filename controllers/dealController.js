@@ -331,6 +331,16 @@ const updateDealDocuments = asyncHandler(async (req, res) => {
 })
 
 // @desc Update Deal
+// @route PATCH /deals/documents
+// @access Private
+
+const deleteDealDocuments = asyncHandler(async (req, res) => {
+  const { id } = req.body
+  await DealDocument.destroy({ where: { id: id } })
+  return res.json({ message: 'Document Deleted' })
+})
+
+// @desc Update Deal
 // @route PATCH /deals
 // @access Private
 const updateDeal = asyncHandler(async (req, res) => {})
@@ -347,4 +357,5 @@ module.exports = {
   deleteDeal,
   getDealById,
   updateDealDocuments,
+  deleteDealDocuments,
 }

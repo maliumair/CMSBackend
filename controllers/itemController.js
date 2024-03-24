@@ -88,6 +88,10 @@ const getItemById = asyncHandler(async (req, res) => {
         model: Amenity,
         required: true,
       },
+      {
+        model: Unit,
+        required: true,
+      },
     ],
   })
   if (!item) {
@@ -109,6 +113,7 @@ const createNewItem = asyncHandler(async (req, res) => {
     totalPrice,
     area,
     location,
+    address,
     view,
     amenities,
     description,
@@ -132,6 +137,9 @@ const createNewItem = asyncHandler(async (req, res) => {
     description,
     bedrooms,
     floor,
+    address,
+    lat: location.lat,
+    lng: location.lng,
   }
 
   try {
@@ -173,6 +181,7 @@ const updateItem = asyncHandler(async (req, res) => {
     unitPrice,
     totalPrice,
     area,
+    address,
     location,
     view,
     amenities,
@@ -192,7 +201,9 @@ const updateItem = asyncHandler(async (req, res) => {
     unitId,
     unitPrice,
     totalPrice,
-    location,
+    address,
+    lat: location.lat,
+    lng: location.lng,
     view,
     description,
     bedrooms,
