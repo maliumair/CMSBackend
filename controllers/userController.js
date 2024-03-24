@@ -59,6 +59,9 @@ const getAllUsers = asyncHandler(async (req, res) => {
     }
   } catch (e) {
     console.log(e)
+    return res
+      .status(500)
+      .json({ message: 'There was error while processing your request' })
   }
 })
 

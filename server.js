@@ -11,15 +11,11 @@ const corsOptions = require('./config/corsOptions')
 const db = require('./models')
 const app = express()
 const PORT = process.env.PORT || 3000
-
 console.log(process.env.NODE_ENV)
 
 app.use(logger)
-
 app.use(cors(corsOptions))
-
-app.use(express.json())
-
+app.use(express.json({ limit: '50mb' }))
 app.use(cookieParser())
 
 app.use('/', express.static(path.join(__dirname, 'public')))
@@ -28,11 +24,14 @@ app.use('/', require('./routes/root'))
 app.use('/auth', require('./routes/authRoutes'))
 app.use('/users', require('./routes/userRoutes'))
 app.use('/deals', require('./routes/dealRoutes'))
+app.use('/items', require('./routes/itemRoutes'))
+app.use('/units', require('./routes/unitRoutes'))
+app.use('/amenities', require('./routes/amenityRoutes'))
 
 app.all('*', (req, res) => {
   res.status(404)
   if (req.accepts('html')) {
-    res.sendFile(path.join(__dirname, 'views', '404.html'))
+    res.sendFile(path.join(__dirname, 'Views', '404.html'))
   } else if (req.accepts('json')) {
     res.json({ message: '404 Not Found' })
   } else {
@@ -45,7 +44,7 @@ app.use(errorHandler)
 // {force: true}
 // only for development
 db.sequelize
-  .sync({ alter: true })
+  .sync({ force: true })
   .then(async () => {
     console.log('Synced db.')
     await db.superAdmin()
@@ -59,15 +58,15 @@ db.sequelize
   })
 
 const httpServer = createServer(app)
-const io = new Server(httpServer, {
-  cors: {
-    origin: 'http://localhost:5173',
-  },
-})
-io.on('connection', (socket) => {
-  console.log('New Connection')
-})
-io.on('disconnect', (socket) => {
-  console.log('Connection Ended')
-})
+// const io = new Server(httpServer, {
+//   cors: {
+//     origin: 'http://localhost:5173',
+//   },
+// })
+// io.on('connection', (socket) => {
+//   console.log('New Connection')
+// })
+// io.on('disconnect', (socket) => {
+//   console.log('Connection Ended')
+// })
 httpServer.listen(PORT, () => console.log(`Server started on port ${PORT}`))

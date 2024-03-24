@@ -1,38 +1,5 @@
-const { addMonths } = require('date-fns')
-
 module.exports = (sequelize, DataTypes) => {
   const Deal = sequelize.define('deals', {
-    productType: {
-      type: DataTypes.ENUM,
-      values: ['Shop', 'Apartment', 'Car Park', 'Plot', 'Other'],
-      defaultValue: 'Other',
-      required: true,
-      allowNull: false,
-    },
-
-    measuringUnit: {
-      type: DataTypes.ENUM,
-      values: ['Marla', 'Sq. ft'],
-      defaultValue: 'Sq. ft',
-      allowNull: false,
-      required: true,
-    },
-    totalArea: {
-      type: DataTypes.DOUBLE,
-      required: true,
-      allowNull: false,
-    },
-    unitPrice: {
-      type: DataTypes.DOUBLE,
-      required: true,
-      allowNull: false,
-    },
-
-    totalPrice: {
-      type: DataTypes.DOUBLE,
-      required: true,
-      allowNull: false,
-    },
     commissionPercentage: {
       type: DataTypes.DOUBLE,
       defaultValue: 0,

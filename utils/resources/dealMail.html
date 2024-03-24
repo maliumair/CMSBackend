@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <title>Email Template</title>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+    "
+  >
+    <div
+      style="
+        max-width: 600px;
+        margin: auto;
+        background: #f4f4f4;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      "
+    >
+      <div
+        style="
+          text-align: center;
+          background: #0e1a4e;
+          display: flex;
+          align-items: center;
+          width: 100%;
+          justify-content: center;
+          height: 60px;
+          margin-bottom: 10px;
+        "
+      >
+        <img
+          src="./logo-white.png"
+          alt="Logo"
+          style="
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+          "
+        />
+      </div>
+      <div
+        style="
+          background-color: #0e1a4e;
+          color: #ffffff;
+          padding: 20px;
+          border-radius: 5px;
+          margin: 20px;
+          font-family: Arial, sans-serif;
+        "
+      >
+        <p>Dear [User],</p>
+
+        <p>We hope this email finds you well.</p>
+
+        <p>
+          We are delighted to inform you that the property dealing process has
+          been successfully completed. This email contains detailed information
+          regarding the property, along with the deal specifics and installment
+          details. Additionally, a PDF document with your deal information is
+          attached to this email for your reference.
+        </p>
+
+        <p style="margin-bottom: 20px">
+          If you have any questions or concerns, please don't hesitate to
+          contact us.
+        </p>
+        <p style="margin-bottom: 10px">
+          Email:
+          <a style="color: #ffffff" href="mailto:cmsnodemailer@gmail.com"
+            >cmsnodemailer@gmail.com</a
+          >
+        </p>
+
+        <p>
+          Should you have any further inquiries or require assistance, feel free
+          to reach out to us.
+        </p>
+
+        <p>Warm regards,</p>
+
+        <p>
+          CMS Team<br />
+          Property Developers<br />
+          cmsnodemailer@gmail.com
+        </p>
+      </div>
+
+      <div
+        style="
+          padding: 20px;
+          margin-bottom: 20px;
+          border-radius: 5px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          background-color: #ffffff;
+        "
+      >
+        <h2
+          style="
+            color: #0e1a4e;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+          "
+        >
+          User Information
+        </h2>
+        <div id="userInfo" style="display: flex">
+          <!-- User Information here -->
+        </div>
+      </div>
+      <div
+        style="
+          padding: 20px;
+          margin-bottom: 20px;
+          border-radius: 5px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          background-color: #ffffff;
+        "
+      >
+        <h2
+          style="
+            color: #0e1a4e;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+          "
+        >
+          Deal Information
+        </h2>
+        <div id="dealInfo">
+          <!-- Deal Information here -->
+        </div>
+      </div>
+      <div
+        style="
+          padding: 20px;
+          margin-bottom: 20px;
+          border-radius: 5px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          background-color: #ffffff;
+        "
+      >
+        <h2
+          style="
+            color: #0e1a4e;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+          "
+        >
+          Installment Information
+        </h2>
+        <div style="overflow-x: auto">
+          <table
+            style="width: 100%; border-collapse: collapse; overflow-x: auto"
+            id="installmentTable"
+          >
+            <thead>
+              <tr>
+                <th
+                  style="
+                    background-color: #0e1a4e;
+                    color: #ffffff;
+                    font-size: 18px;
+                    padding: 10px;
+                    text-align: left;
+                  "
+                >
+                  Month
+                </th>
+                <th
+                  style="
+                    background-color: #0e1a4e;
+                    color: #ffffff;
+                    font-size: 18px;
+                    padding: 10px;
+                    text-align: left;
+                  "
+                >
+                  Date
+                </th>
+                <th
+                  style="
+                    background-color: #0e1a4e;
+                    color: #ffffff;
+                    font-size: 18px;
+                    padding: 10px;
+                    text-align: left;
+                  "
+                >
+                  Amount
+                </th>
+                <th
+                  style="
+                    background-color: #0e1a4e;
+                    color: #ffffff;
+                    font-size: 18px;
+                    padding: 10px;
+                    text-align: left;
+                  "
+                >
+                  Type
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Installment Data here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div
+        style="
+          background-color: #0e1a4e;
+          color: #ffffff;
+          padding: 20px;
+          text-align: center;
+          border-radius: 0 0 5px 5px;
+        "
+      >
+        <p>All rights reserved by CMS © 2024</p>
+      </div>
+    </div>
+
+    <script>
+      // JavaScript arrays for user information, deal information, and installment information
+      const userInfo = [
+        'John',
+        'Doe',
+        'Jane Doe',
+        'Father',
+        'john.doe@example.com',
+        '+1234567890',
+        '12345-6789012-3',
+      ]
+      const dealInfo = [
+        'Product',
+        'Unit',
+        'PKR 13,000',
+        'PKR 1,300,000',
+        '10%',
+        'Sale',
+        '1 year',
+        '3%',
+        'January 1, 2023',
+      ]
+      const installmentData = [
+        ['January', '2024-01-15', '$500', 'Type A'],
+        ['February', '2024-02-15', '$500', 'Type B'],
+        ['March', '2024-03-15', '$500', 'Type C'],
+      ]
+
+      // Function to populate user information dynamically
+      function populateUserInfo() {
+        const userInfoElement = document.getElementById('userInfo')
+        let userInfoHTML = ''
+        const labels = [
+          'First Name',
+          'Last Name',
+          'Relation Name',
+          'Relation',
+          'Email',
+          'Phone',
+          'CNIC',
+        ]
+        userInfo.forEach((value, index) => {
+          userInfoHTML += `<div style="flex: 0 0 calc(50% - 10px); margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">${labels[index]}:</strong> ${value}</p></div>`
+        })
+        userInfoElement.innerHTML = userInfoHTML
+      }
+
+      // Function to populate deal information dynamically
+      function populateDealInfo() {
+        const dealInfoElement = document.getElementById('dealInfo')
+        let dealInfoHTML = ''
+        const labels = [
+          'Product Type',
+          'Measuring Unit',
+          'Unit Price',
+          'Total Price',
+          'Discount Percentage',
+          'Deal Type',
+          'Duration',
+          'Rent Percentage',
+          'Booked At',
+        ]
+        dealInfo.forEach((value, index) => {
+          dealInfoHTML += `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">${labels[index]}:</strong> ${value}</p></div>`
+        })
+        dealInfoElement.innerHTML = dealInfoHTML
+      }
+
+      // Function to populate installment table dynamically
+      function populateInstallmentTable() {
+        const installmentTableBody = document.querySelector(
+          '#installmentTable tbody'
+        )
+        let installmentRowsHTML = ''
+        installmentData.forEach((installment) => {
+          installmentRowsHTML += `<tr>
+                                            <td style="padding: 10px;">${installment[0]}</td>
+                                            <td style="padding: 10px;">${installment[1]}</td>
+                                            <td style="padding: 10px;">${installment[2]}</td>
+                                            <td style="padding: 10px;">${installment[3]}</td>
+                                        </tr>`
+        })
+        installmentTableBody.innerHTML = installmentRowsHTML
+      }
+
+      populateUserInfo()
+      populateDealInfo()
+      populateInstallmentTable()
+    </script>
+  </body>
+</html>

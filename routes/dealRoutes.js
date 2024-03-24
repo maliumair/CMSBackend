@@ -13,5 +13,9 @@ router
   .patch(dealController.updateDeal)
   .delete(dealController.deleteDeal)
 
+router
+  .route('/documents')
+  .patch(dealController.updateDealDocuments)
+  .delete(dealController.deleteDealDocuments)
 router.get('/:id', dealController.getDealById)
 module.exports = router
