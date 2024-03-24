@@ -2,14 +2,19 @@ const db = require('../models/')
 const { getPagination, getPagingData } = require('../utils/pagination')
 const User = db.users
 const Deal = db.deals
+const Item = db.items
+const Unit = db.units
 const sequelize = db.sequelize
 const Installment = db.installments
+const DealDocument = db.dealDocuments
 const Address = db.addresses
 const Nominee = db.nominees
-const { Op } = require('sequelize')
+const { Op, col } = require('sequelize')
 
 // const Deal = db.deals
 const asyncHandler = require('express-async-handler')
+const { sendDealCreationEmail } = require('../utils/emails')
+const { generatePDF } = require('../utils/generateDealPdf')
 
 // @desc Get All Deals
 // @route GET /deals
@@ -29,26 +34,21 @@ const getAllDeals = asyncHandler(async (req, res) => {
     filterSearch = {
       [Op.or]: [
         { dealType: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
-        { measuringUnit: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
-        { totalArea: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
-        { totalPrice: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
-        { productType: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
       ],
     }
   }
 
   if (sortBy) {
     if (sort === 'true') {
-      orderClause.push([`${sortBy}`, 'DESC'])
+      orderClause.push([col(`${sortBy}`), 'DESC'])
     } else {
-      orderClause.push([`${sortBy}`, 'ASC'])
+      orderClause.push([col(`${sortBy}`), 'ASC'])
     }
   }
 
   try {
     const deals = await Deal.findAndCountAll({
       where: filterSearch,
-      order: orderClause,
       limit,
       offset,
       distinct: true,
@@ -73,7 +73,21 @@ const getAllDeals = asyncHandler(async (req, res) => {
           model: Installment,
           required: true,
         },
+        {
+          model: DealDocument,
+        },
+        {
+          model: Item,
+          required: true,
+          include: [
+            {
+              model: Unit,
+              required: true,
+            },
+          ],
+        },
       ],
+      order: orderClause,
     })
     if (!deals?.rows || !deals?.rows?.length) {
       return res.json({
@@ -121,8 +135,21 @@ const getDealById = asyncHandler(async (req, res) => {
         ],
       },
       {
+        model: Item,
+        required: true,
+        include: [
+          {
+            model: Unit,
+            required: true,
+          },
+        ],
+      },
+      {
         model: Installment,
         required: true,
+      },
+      {
+        model: DealDocument,
       },
     ],
   })
@@ -151,7 +178,6 @@ const createNewDeal = asyncHandler(async (req, res) => {
     installments,
   } = dealData
 
-  // Writing new save function to include lump sum scenario.
   duplicateEmail = await User.findOne({ where: { email: user.email } })
   duplicateCNIC = await User.findOne({ where: { cnic: user.cnic } })
   duplicatePhone = await User.findOne({ where: { phone: user.phone } })
@@ -167,7 +193,7 @@ const createNewDeal = asyncHandler(async (req, res) => {
   }
 
   //Deal
-  const { type, unit, totalArea, unitPrice, totalPrice } = product
+  const { itemId } = product
   const {
     commissionPercentage,
     commissionPerUnit,
@@ -181,9 +207,9 @@ const createNewDeal = asyncHandler(async (req, res) => {
 
   try {
     await sequelize.transaction(async (t) => {
-      // New User
+      //New User
       const userRow = await User.create(user, { transaction: t })
-      // New Nominee
+      //New Nominee
       const nomineeRow = await Nominee.create(nominee, { transaction: t })
       //Addresses
       const permanent = await Address.create(
@@ -200,13 +226,11 @@ const createNewDeal = asyncHandler(async (req, res) => {
         },
         { transaction: t }
       )
+
+      // deal
       const dealRow = await Deal.create(
         {
-          productType: type,
-          measuringUnit: unit,
-          totalArea,
-          unitPrice,
-          totalPrice,
+          itemId,
           commissionPercentage,
           commissionPerUnit,
           commissionFixed,
@@ -230,6 +254,15 @@ const createNewDeal = asyncHandler(async (req, res) => {
           { transaction: t }
         )
       }
+
+      // Updating Item Status
+      Item.update(
+        { status: 'Sold' },
+        { where: { id: itemId } },
+        { transaction: t }
+      )
+
+      //installments
       let installmentArray = []
       for (let i = 0; i < installments.length; i++) {
         let installmentRow = await Installment.create(
@@ -256,14 +289,45 @@ const createNewDeal = asyncHandler(async (req, res) => {
 
       //Saving Id param
       id = dealRow.id
+
+      //Generating PDF and Sending Email
+      // await generatePDF(userRow, dealRow, installments)
+      sendDealCreationEmail(userRow, dealRow, installments)
     })
 
     res.json({ message: 'Deal Creation Successful', id: id })
-  } catch (err) {
+  } catch (error) {
+    console.log(error)
     res.status(400).json({
       message: `There was an error while creating the deal.`,
     })
   }
+})
+
+// @desc Update Deal
+// @route PATCH /deals/documents
+// @access Private
+const updateDealDocuments = asyncHandler(async (req, res) => {
+  const { id, images, type } = req.body
+  console.log(req.body)
+  for (let i = 0; i < images.length; i++) {
+    try {
+      await DealDocument.create({
+        imageLink: images[i].link,
+        imageCaption: type,
+        imageHash: images[i].hash,
+        dealId: id,
+      })
+      return res.json({ message: 'Image Uploaded Successfully!' })
+    } catch (error) {
+      console.log(error)
+      return res.status(400).json({
+        message: 'There was an error while uploading image. Try again!',
+      })
+    }
+  }
+
+  return res.status(400).json({ message: 'Invalid Data Received' })
 })
 
 // @desc Update Deal
@@ -282,4 +346,5 @@ module.exports = {
   updateDeal,
   deleteDeal,
   getDealById,
+  updateDealDocuments,
 }
