@@ -51,7 +51,6 @@ const getAllItems = asyncHandler(async (req, res) => {
       include: [
         {
           model: Amenity,
-          required: true,
         },
 
         {
@@ -86,7 +85,6 @@ const getItemById = asyncHandler(async (req, res) => {
     include: [
       {
         model: Amenity,
-        required: true,
       },
       {
         model: Unit,
