@@ -318,7 +318,6 @@ const updateDealDocuments = asyncHandler(async (req, res) => {
         imageHash: images[i].hash,
         dealId: id,
       })
-      return res.json({ message: 'Image Uploaded Successfully!' })
     } catch (error) {
       console.log(error)
       return res.status(400).json({
@@ -327,7 +326,7 @@ const updateDealDocuments = asyncHandler(async (req, res) => {
     }
   }
 
-  return res.status(400).json({ message: 'Invalid Data Received' })
+  return res.json({ message: 'Images Uploaded' })
 })
 
 // @desc Update Deal
