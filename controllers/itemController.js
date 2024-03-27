@@ -3,6 +3,7 @@ const Unit = db.units
 const Item = db.items
 const Amenity = db.amenities
 const ItemAmenity = db.itemAmenities
+const Document = db.dealDocuments
 const sequelize = db.sequelize
 const asyncHandler = require('express-async-handler')
 const { getPagination, getPagingData } = require('../utils/pagination')
@@ -12,14 +13,13 @@ const { Op } = require('sequelize')
 // @route GET /items
 // @access Private
 const getAllItems = asyncHandler(async (req, res) => {
-  const { page, size, search, sortBy, sort } = req.query
-  console.log(page, size, search, sortBy, sort)
+  const { page, size, search, sortBy, sort, status } = req.query
   const { limit, offset } = getPagination(page, size)
-  let filterSearch = {}
+  let filterClause = []
   let orderClause = []
 
   if (search) {
-    filterSearch = {
+    filterClause.push({
       [Op.or]: [
         { itemType: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
         { itemName: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
@@ -29,7 +29,13 @@ const getAllItems = asyncHandler(async (req, res) => {
         { unitPrice: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
         { totalPrice: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
       ],
-    }
+    })
+  }
+
+  if (status) {
+    filterClause.push({
+      status: status,
+    })
   }
 
   if (sortBy) {
@@ -42,7 +48,7 @@ const getAllItems = asyncHandler(async (req, res) => {
 
   try {
     const items = await Item.findAndCountAll({
-      where: filterSearch,
+      where: filterClause,
       order: orderClause,
       limit,
       offset,
@@ -56,6 +62,9 @@ const getAllItems = asyncHandler(async (req, res) => {
         {
           model: Unit,
           required: true,
+        },
+        {
+          model: Document,
         },
       ],
     })
@@ -90,6 +99,9 @@ const getItemById = asyncHandler(async (req, res) => {
         model: Unit,
         required: true,
       },
+      {
+        model: Document,
+      },
     ],
   })
   if (!item) {
@@ -117,12 +129,12 @@ const createNewItem = asyncHandler(async (req, res) => {
     description,
     floor,
     bedrooms,
+    images,
   } = req.body
 
   if (!itemType || !itemName || !unitId || !unitPrice || !totalPrice) {
     return res.status(400).json({ message: 'Invalid item data' })
   }
-
   let itemData = {
     itemType,
     itemName,
@@ -157,6 +169,17 @@ const createNewItem = asyncHandler(async (req, res) => {
           { transaction: t }
         )
       }
+      for (let i = 0; i < images.length; i++) {
+        await Document.create(
+          {
+            imageLink: images[i].imageLink,
+            imageCaption: images[i].imageCaption,
+            imageHash: images[i].imageHash,
+            itemId: item.id,
+          },
+          { transaction: t }
+        )
+      }
     })
     return res.json({ message: 'Item created successfully!' })
   } catch (error) {
@@ -186,6 +209,7 @@ const updateItem = asyncHandler(async (req, res) => {
     description,
     floor,
     bedrooms,
+    images,
   } = req.body
 
   if (!itemType || !itemName || !unitId || !unitPrice || !totalPrice) {
@@ -226,6 +250,20 @@ const updateItem = asyncHandler(async (req, res) => {
         await ItemAmenity.create(
           {
             amenityId: amenities[i],
+            itemId: id,
+          },
+          { transaction: t }
+        )
+      }
+
+      await Document.destroy({ where: { itemId: id } }, { transaction: t })
+
+      for (let i = 0; i < images.length; i++) {
+        await Document.create(
+          {
+            imageLink: images[i].imageLink,
+            imageCaption: images[i].imageCaption,
+            imageHash: images[i].imageHash,
             itemId: id,
           },
           { transaction: t }

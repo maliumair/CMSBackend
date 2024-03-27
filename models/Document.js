@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const DealDocument = sequelize.define('dealDocuments', {
+  const Document = sequelize.define('dealDocuments', {
     imageLink: {
       type: DataTypes.STRING,
       required: true,
@@ -13,5 +13,5 @@ module.exports = (sequelize, DataTypes) => {
       required: true,
     },
   })
-  return DealDocument
+  return Document
 }
