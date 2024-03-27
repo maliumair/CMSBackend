@@ -9,8 +9,8 @@ const { Op } = require('sequelize')
 // @route GET /units
 // @access Private
 const getAllUnits = asyncHandler(async (req, res) => {
-  const { page, size, search, sortBy, sort } = req.query
-  let filterClause = {}
+  const { page, size, search, type, sortBy, sort } = req.query
+  let filterClause = []
   let OrderClause = []
   if (sortBy) {
     if (sort === 'true') {
@@ -21,13 +21,19 @@ const getAllUnits = asyncHandler(async (req, res) => {
   }
 
   if (search) {
-    filterClause = {
+    filterClause.push({
       [Op.or]: [
         { unitName: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
         { abbreviation: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
         { description: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
       ],
-    }
+    })
+  }
+
+  if (type !== '') {
+    filterClause.push({
+      unitType: parseInt(type),
+    })
   }
   const { limit, offset } = getPagination(page, size)
   try {
@@ -73,7 +79,7 @@ const getUnitById = asyncHandler(async (req, res) => {
 // @route GET /units
 // @access Private
 const createNewUnit = asyncHandler(async (req, res) => {
-  const { unitName, abbreviation, description } = req.body
+  const { unitName, abbreviation } = req.body
   const unit = req.body
   if (!unitName || !abbreviation) {
     return res.status(400).json({ message: 'Invalid Unit Data Received' })
@@ -92,13 +98,14 @@ const createNewUnit = asyncHandler(async (req, res) => {
 // @route GET /units/:id
 // @access Private
 const updateUnit = asyncHandler(async (req, res) => {
-  const { id, unitName, abbreviation, description } = req.body
+  const { id, unitName, abbreviation, description, unitType } = req.body
   try {
     await Unit.update(
       {
         unitName: unitName,
         abbreviation: abbreviation,
         description: description,
+        unitType: unitType,
       },
       { where: { id: id } }
     )
