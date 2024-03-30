@@ -1,5 +1,9 @@
 module.exports = (sequelize, DataTypes) => {
   const Deal = sequelize.define('deals', {
+    offeredPrice: {
+      type: DataTypes.DOUBLE,
+      defaultValue: 0,
+    },
     commissionPercentage: {
       type: DataTypes.DOUBLE,
       defaultValue: 0,
@@ -28,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DOUBLE,
       defaultValue: 0,
     },
-    dealType: {
+    plan: {
       type: DataTypes.ENUM,
       values: ['Installments', 'Lump Sum'],
       defaultValue: 'Installments',
@@ -51,6 +55,16 @@ module.exports = (sequelize, DataTypes) => {
     rentTotal: {
       type: DataTypes.DOUBLE,
       allowNull: true,
+    },
+    dealType: {
+      type: DataTypes.ENUM,
+      values: ['Negotiated', 'Finalized'],
+      allowNull: false,
+    },
+    isArchived: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
     },
   })
   return Deal

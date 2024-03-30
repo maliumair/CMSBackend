@@ -1,6 +1,8 @@
 const db = require('../models/')
 const Unit = db.units
 const Item = db.items
+const Deal = db.deals
+const User = db.users
 const Amenity = db.amenities
 const ItemAmenity = db.itemAmenities
 const Document = db.dealDocuments
@@ -101,6 +103,10 @@ const getItemById = asyncHandler(async (req, res) => {
       },
       {
         model: Document,
+      },
+      {
+        model: Deal,
+        include: [{ model: User }],
       },
     ],
   })

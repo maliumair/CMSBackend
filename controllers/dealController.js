@@ -20,22 +20,28 @@ const { generatePDF } = require('../utils/generateDealPdf')
 // @route GET /deals
 // @access Private
 const getAllDeals = asyncHandler(async (req, res) => {
-  const { page, size, email, search, sortBy, sort } = req.query
+  const { page, size, email, search, sortBy, sort, type } = req.query
   console.log(search)
   const { limit, offset } = getPagination(page, size)
   let filterEmail = {}
-  let filterSearch = {}
+  let filterClause = []
   let orderClause = []
   if (email) {
     filterEmail = { email: email }
   }
 
   if (search) {
-    filterSearch = {
+    filterClause.push({
       [Op.or]: [
         { dealType: { [Op.regexp]: sequelize.literal(`'${search}'`) } },
       ],
-    }
+    })
+  }
+
+  if (type != '') {
+    filterClause.push({
+      dealType: type,
+    })
   }
 
   if (sortBy) {
@@ -48,7 +54,7 @@ const getAllDeals = asyncHandler(async (req, res) => {
 
   try {
     const deals = await Deal.findAndCountAll({
-      where: filterSearch,
+      where: filterClause,
       limit,
       offset,
       distinct: true,
@@ -176,6 +182,7 @@ const createNewDeal = asyncHandler(async (req, res) => {
     rental,
     product,
     installments,
+    dealType,
   } = dealData
 
   duplicateEmail = await User.findOne({ where: { email: user.email } })
@@ -204,10 +211,12 @@ const createNewDeal = asyncHandler(async (req, res) => {
   const { discountPercentage, discountFixed, totalDiscount } = capital.discount
   const { plan, planDuration, bookingRental } = booking
   const { total, fixed, percentage } = rental
-
   try {
     await sequelize.transaction(async (t) => {
       //New User
+      if (dealType === 'Negotiated') {
+        user.isActive = 0
+      }
       const userRow = await User.create(user, { transaction: t })
       //New Nominee
       const nomineeRow = await Nominee.create(nominee, { transaction: t })
@@ -227,22 +236,24 @@ const createNewDeal = asyncHandler(async (req, res) => {
         { transaction: t }
       )
 
+      const dealData = {
+        dealType,
+        itemId,
+        commissionPercentage,
+        commissionPerUnit,
+        commissionFixed,
+        totalCommission,
+        discountPercentage,
+        discountFixed,
+        totalDiscount,
+        plan: plan,
+        duration: planDuration,
+      }
+      if (dealType === 'Negotiated') {
+        dealData.offeredPrice = product.offeredTotalPrice
+      }
       // deal
-      const dealRow = await Deal.create(
-        {
-          itemId,
-          commissionPercentage,
-          commissionPerUnit,
-          commissionFixed,
-          totalCommission,
-          discountPercentage,
-          discountFixed,
-          totalDiscount,
-          dealType: plan,
-          duration: planDuration,
-        },
-        { transaction: t }
-      )
+      const dealRow = await Deal.create(dealData, { transaction: t })
       if (plan === 'Lump Sum' && bookingRental) {
         Deal.update(
           {
@@ -256,30 +267,49 @@ const createNewDeal = asyncHandler(async (req, res) => {
       }
 
       // Updating Item Status
-      Item.update(
-        { status: 'Sold' },
-        { where: { id: itemId } },
-        { transaction: t }
-      )
+      if (dealType !== 'Negotiated') {
+        Item.update(
+          { status: 'Sold' },
+          { where: { id: itemId } },
+          { transaction: t }
+        )
+      }
 
       //installments
       let installmentArray = []
       for (let i = 0; i < installments.length; i++) {
-        let installmentRow = await Installment.create(
-          {
-            installmentType: installments[i].type,
-            installmentPercentage: installments[i].percentage,
-            installmentFixed: installments[i].fixed,
-            installmentAmount: installments[i].amount,
-            installmentAmountPaid: installments[i].paid,
-            installmentDueOn: new Date(installments[i].unformattedDate),
-            isPaid: installments[i].isPaid,
-            installmentPaidOn: installments[i].paidOn,
-          },
-          { transaction: t }
-        )
+        if (dealType === 'Negotiated' && i === 0) {
+          let installmentRow = await Installment.create(
+            {
+              installmentType: installments[i].type,
+              installmentPercentage: installments[i].percentage,
+              installmentFixed: installments[i].fixed,
+              installmentAmount: installments[i].amount,
+              installmentAmountPaid: 0,
+              installmentDueOn: new Date(installments[i].unformattedDate),
+              isPaid: false,
+              installmentPaidOn: installments[i].paidOn,
+            },
+            { transaction: t }
+          )
+          installmentArray.push(installmentRow)
+        } else {
+          let installmentRow = await Installment.create(
+            {
+              installmentType: installments[i].type,
+              installmentPercentage: installments[i].percentage,
+              installmentFixed: installments[i].fixed,
+              installmentAmount: installments[i].amount,
+              installmentAmountPaid: installments[i].paid,
+              installmentDueOn: new Date(installments[i].unformattedDate),
+              isPaid: installments[i].isPaid,
+              installmentPaidOn: installments[i].paidOn,
+            },
+            { transaction: t }
+          )
 
-        installmentArray.push(installmentRow)
+          installmentArray.push(installmentRow)
+        }
       }
       //Adding foreign references
       await userRow.setNominee(nomineeRow, { transaction: t })
@@ -304,12 +334,12 @@ const createNewDeal = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc Update Deal
+// @desc Update Deal Documents
 // @route PATCH /deals/documents
 // @access Private
 const updateDealDocuments = asyncHandler(async (req, res) => {
   const { id, images, type } = req.body
-  console.log(req.body)
+
   for (let i = 0; i < images.length; i++) {
     try {
       await DealDocument.create({
