@@ -1,14 +1,14 @@
 module.exports = (sequelize, DataTypes) => {
   const Document = sequelize.define('dealDocuments', {
     imageLink: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       required: true,
     },
     imageCaption: {
       type: DataTypes.STRING,
       required: true,
     },
-    imageHash: {
+    etag: {
       type: DataTypes.STRING,
       required: true,
     },

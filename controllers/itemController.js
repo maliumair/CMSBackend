@@ -12,6 +12,8 @@ const asyncHandler = require('express-async-handler')
 const { getPagination, getPagingData } = require('../utils/pagination')
 const { Op } = require('sequelize')
 
+const { deleteObject } = require('../utils/deleteObject')
+
 // @desc Get All Items
 // @route GET /items
 // @access Private
@@ -122,6 +124,8 @@ const getItemById = asyncHandler(async (req, res) => {
 // @route GET /items
 // @access Private
 const createNewItem = asyncHandler(async (req, res) => {
+  const { product } = req.body
+  const images = req.files
   const {
     itemType,
     itemName,
@@ -136,8 +140,7 @@ const createNewItem = asyncHandler(async (req, res) => {
     description,
     floor,
     bedrooms,
-    images,
-  } = req.body
+  } = JSON.parse(product)
 
   if (!itemType || !itemName || !unitId || !unitPrice || !totalPrice) {
     return res.status(400).json({ message: 'Invalid item data' })
@@ -179,9 +182,9 @@ const createNewItem = asyncHandler(async (req, res) => {
       for (let i = 0; i < images.length; i++) {
         await Document.create(
           {
-            imageLink: images[i].imageLink,
-            imageCaption: images[i].imageCaption,
-            imageHash: images[i].imageHash,
+            imageLink: images[i].location,
+            imageCaption: 'ITEM',
+            etag: images[i].etag,
             itemId: item.id,
           },
           { transaction: t }
@@ -201,6 +204,8 @@ const createNewItem = asyncHandler(async (req, res) => {
 // @route GET /items
 // @access Private
 const updateItem = asyncHandler(async (req, res) => {
+  const images = req.files
+  const { product } = req.body
   const {
     id,
     itemType,
@@ -216,8 +221,8 @@ const updateItem = asyncHandler(async (req, res) => {
     description,
     floor,
     bedrooms,
-    images,
-  } = req.body
+    files,
+  } = JSON.parse(product)
 
   if (!itemType || !itemName || !unitId || !unitPrice || !totalPrice) {
     return res.status(400).json({ message: 'Invalid item data' })
@@ -237,6 +242,28 @@ const updateItem = asyncHandler(async (req, res) => {
     description,
     bedrooms,
     floor,
+  }
+
+  const existingFiles = await Document.findAll({
+    where: { itemId: id },
+    raw: true,
+  })
+
+  const removedImages = existingFiles.filter(
+    (f) =>
+      !files.some((s) => {
+        return s === f.imageLink
+      })
+  )
+
+  for (let i = 0; i < removedImages.length; i++) {
+    let linkSplit = removedImages[i].imageLink.split('/')
+    const key = linkSplit[linkSplit.length - 1]
+    try {
+      await deleteObject(key)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   try {
@@ -263,18 +290,25 @@ const updateItem = asyncHandler(async (req, res) => {
         )
       }
 
-      await Document.destroy({ where: { itemId: id } }, { transaction: t })
-
-      for (let i = 0; i < images.length; i++) {
-        await Document.create(
-          {
-            imageLink: images[i].imageLink,
-            imageCaption: images[i].imageCaption,
-            imageHash: images[i].imageHash,
-            itemId: id,
-          },
+      for (let i = 0; i < removedImages.length; i++) {
+        await Document.destroy(
+          { where: { id: removedImages[i].id } },
           { transaction: t }
         )
+      }
+
+      if (images) {
+        for (let i = 0; i < images.length; i++) {
+          await Document.create(
+            {
+              imageLink: images[i].location,
+              imageCaption: 'ITEM',
+              etag: images[i].etag,
+              itemId: id,
+            },
+            { transaction: t }
+          )
+        }
       }
     })
     return res.json({ message: 'Item updated successfully!' })
