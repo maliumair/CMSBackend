@@ -61,7 +61,7 @@ const sendVerificationEmail = async (email, userId, lastName, token) => {
   })
 }
 
-const sendDealCreationEmail = async (user, deal, installments) => {
+const sendDealCreationEmail = async (user, deal, product, installments) => {
   const mailOptions = {
     from: process.env.MAIL_USER,
     to: user.email,
@@ -73,7 +73,7 @@ const sendDealCreationEmail = async (user, deal, installments) => {
         cid: 'logo',
       },
     ],
-    html: dealMail(user, deal, installments),
+    html: dealMail(user, deal, product, installments),
   }
 
   transporter.sendMail(mailOptions, (error, info) => {

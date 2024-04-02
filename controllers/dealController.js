@@ -211,6 +211,12 @@ const createNewDeal = asyncHandler(async (req, res) => {
   const { discountPercentage, discountFixed, totalDiscount } = capital.discount
   const { plan, planDuration, bookingRental } = booking
   const { total, fixed, percentage } = rental
+
+  const selectedProduct = await Item.findOne({
+    where: { id: itemId },
+    include: [{ model: Unit }],
+  })
+
   try {
     await sequelize.transaction(async (t) => {
       //New User
@@ -322,8 +328,10 @@ const createNewDeal = asyncHandler(async (req, res) => {
 
       //Generating PDF and Sending Email
       // await generatePDF(userRow, dealRow, installments)
-      sendDealCreationEmail(userRow, dealRow, installments)
+      sendDealCreationEmail(userRow, dealRow, selectedProduct, installments)
     })
+
+    // console.log(installments)
 
     res.json({ message: 'Deal Creation Successful', id: id })
   } catch (error) {
