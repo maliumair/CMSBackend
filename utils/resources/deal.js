@@ -2,9 +2,8 @@ const numberFormat = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'PKR',
 })
-
 let installmentsArray = []
-const dealMail = (user, deal, installments) => {
+const dealMail = (user, deal, product, installments) => {
   const name = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Name:</strong> ${
     user.dataValues.firstName + ' ' + user.dataValues.lastName
   }</p></div>`
@@ -14,15 +13,15 @@ const dealMail = (user, deal, installments) => {
   const phone = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Phone:</strong> ${user.dataValues.phone}</p></div>`
   const password = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Password:</strong> CM$12345</p></div>`
 
-  const productType = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Product:</strong> ${deal.dataValues.productType}</p></div>`
+  const productType = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Product:</strong> ${product.itemType}</p></div>`
   const totalArea = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Total Area:</strong> ${
-    deal.dataValues.totalArea + '' + deal.dataValues.measuringUnit
+    product.area + ' ' + product.unit.abbreviation
   }</p></div>`
   const unitPrice = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Unit Price:</strong> ${numberFormat.format(
-    deal.dataValues.unitPrice
+    product.unitPrice
   )}</p></div>`
   const totalPrice = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Total Price:</strong> ${numberFormat.format(
-    deal.dataValues.totalPrice
+    product.totalPrice
   )}</p></div>`
   const commission = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Commission:</strong> ${numberFormat.format(
     deal.dataValues.totalCommission
@@ -31,6 +30,7 @@ const dealMail = (user, deal, installments) => {
     deal.dataValues.totalDiscount
   )}</p></div>`
   const dealType = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Deal Type:</strong> ${deal.dataValues.dealType}</p></div>`
+  const plan = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Deal Type:</strong> ${deal.dataValues.plan}</p></div>`
   const duration = `<div style="margin-right: 20px;"><p style="margin: 0;"><strong style="color : #0e1a4e;">Duration:</strong> ${deal.dataValues.duration}</p></div>`
 
   for (let i = 0; i < installments.length; i++) {
@@ -193,6 +193,7 @@ const dealMail = (user, deal, installments) => {
         </h2>
         <div id="dealInfo">
         ${dealType}
+        ${plan}
         ${duration}  
         ${productType}
           ${totalArea}
