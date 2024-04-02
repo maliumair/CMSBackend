@@ -10,6 +10,7 @@ const DealDocument = db.dealDocuments
 const Address = db.addresses
 const Nominee = db.nominees
 const { Op, col } = require('sequelize')
+const { deleteObject } = require('../utils/deleteObject')
 
 // const Deal = db.deals
 const asyncHandler = require('express-async-handler')
@@ -121,7 +122,6 @@ const getDealById = asyncHandler(async (req, res) => {
   if (filter) {
     filterClause = { email: filter }
   }
-  console.log(filterClause)
   const deal = await Deal.findOne({
     where: { id: id },
     include: [
@@ -338,14 +338,16 @@ const createNewDeal = asyncHandler(async (req, res) => {
 // @route PATCH /deals/documents
 // @access Private
 const updateDealDocuments = asyncHandler(async (req, res) => {
-  const { id, images, type } = req.body
+  const { id, imageCaption } = req.body
+  const images = req.files
+  console.log(images)
 
   for (let i = 0; i < images.length; i++) {
     try {
       await DealDocument.create({
-        imageLink: images[i].link,
-        imageCaption: type,
-        imageHash: images[i].hash,
+        imageLink: images[i].location,
+        imageCaption: imageCaption,
+        etag: images[i].etag,
         dealId: id,
       })
     } catch (error) {
@@ -365,7 +367,15 @@ const updateDealDocuments = asyncHandler(async (req, res) => {
 
 const deleteDealDocuments = asyncHandler(async (req, res) => {
   const { id } = req.body
-  await DealDocument.destroy({ where: { id: id } })
+  const document = await DealDocument.findOne({ where: { id: id }, raw: true })
+  let linkSplit = document.imageLink.split('/')
+  const key = linkSplit[linkSplit.length - 1]
+  try {
+    await deleteObject(key)
+    await DealDocument.destroy({ where: { id: id } })
+  } catch (err) {
+    console.log(err)
+  }
   return res.json({ message: 'Document Deleted' })
 })
 
